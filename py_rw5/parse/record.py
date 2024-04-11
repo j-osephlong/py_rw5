@@ -129,7 +129,26 @@ class Rw5Record:
         if end_of_val == -1:
             end_of_val = len(line)
 
-        return line[start_of_val:end_of_val].strip()
+        param = line[start_of_val:end_of_val].strip()
+        if "--" in param:
+            param = param[: param.find("--")]
+        return param
+
+    @staticmethod
+    def get_comment(line: str):
+        _line = line
+        comment_index = _line.find("--")
+        if comment_index == 0:
+            # this means it's a comment line
+            # comment lines might be comment "records" which can have their own comments
+            _line = _line.removeprefix("--")
+            comment_index = _line.find("--")
+
+        # no comment found
+        if comment_index == -1:
+            return None
+
+        return _line[comment_index:].removeprefix("--")
 
     @property
     def type_description(self):
@@ -157,7 +176,7 @@ class Rw5Record:
         cls, index: int, record_type: RecordType, line: str, machine_state: MachineState
     ) -> tuple[Self, MachineState]:
         """Creates record from line of Rw5 file"""
-        comment = Rw5Record.get_param_optional(line, "--")
+        comment = Rw5Record.get_comment(line)
         return (
             cls(
                 index=index,
@@ -257,7 +276,7 @@ class BacksightRecord(Rw5Record):
     def from_string(
         cls, index: int, record_type: RecordType, line: str, machine_state: MachineState
     ) -> tuple[Self, MachineState]:
-        comment = Rw5Record.get_param_optional(line, "--")
+        comment = Rw5Record.get_comment(line)
         OP = Rw5Record.get_param(line, "OP")
         assert OP
         BP = Rw5Record.get_param(line, "BP")
@@ -306,7 +325,7 @@ class JobRecord(Rw5Record):
     def from_string(
         cls, index: int, record_type: RecordType, line: str, machine_state: MachineState
     ) -> tuple[Self, MachineState]:
-        comment = Rw5Record.get_param_optional(line, "--")
+        comment = Rw5Record.get_comment(line)
         NM = Rw5Record.get_param(line, "NM")
         DT = Rw5Record.get_param(line, "DT")
         TM = Rw5Record.get_param(line, "TM")
@@ -343,7 +362,7 @@ class LineOfSightRecord(Rw5Record):
     def from_string(
         cls, index: int, record_type: RecordType, line: str, machine_state: MachineState
     ) -> tuple[Self, MachineState]:
-        comment = Rw5Record.get_param_optional(line, "--")
+        comment = Rw5Record.get_comment(line)
         _HI = Rw5Record.get_param_optional(line, "HI")
         _HR = Rw5Record.get_param_optional(line, "HR")
         HI = None
@@ -395,7 +414,7 @@ class ModeSetupRecord(Rw5Record):
     def from_string(
         cls, index: int, record_type: RecordType, line: str, machine_state: MachineState
     ) -> tuple[Self, MachineState]:
-        comment = Rw5Record.get_param_optional(line, "--")
+        comment = Rw5Record.get_comment(line)
         AD = Rw5Record.get_param(line, "AD")
         UN = Rw5Record.get_param(line, "UN")
         SF = Rw5Record.get_param(line, "SF")
@@ -442,7 +461,7 @@ class OccupyRecord(Rw5Record):
     def from_string(
         cls, index: int, record_type: RecordType, line: str, machine_state: MachineState
     ) -> tuple[Self, MachineState]:
-        comment = Rw5Record.get_param_optional(line, "--")
+        comment = Rw5Record.get_comment(line)
         OP = Rw5Record.get_param(line, "OP")
         N = Rw5Record.get_param(line, "N ")
         E = Rw5Record.get_param(line, "E ")
@@ -483,7 +502,7 @@ class OffCenterShotRecord(Rw5Record):
     def from_string(
         cls, index: int, record_type: RecordType, line: str, machine_state: MachineState
     ) -> tuple[Self, MachineState]:
-        comment = Rw5Record.get_param_optional(line, "--")
+        comment = Rw5Record.get_comment(line)
         _AR = Rw5Record.get_param(line, "AR")
         AR = DMS.from_str(_AR)
         _ZE = Rw5Record.get_param(line, "ZE")
@@ -509,6 +528,17 @@ class OffCenterShotRecord(Rw5Record):
 
 
 # region Store Point Record
+
+
+@dataclasses.dataclass(kw_only=True)
+class StorePointResectionReadingCommentRecord:
+    FP: str
+    AR: DMS
+    ZE: DMS
+    SD: Decimal
+    comment: Optional[str]
+
+
 @dataclasses.dataclass(kw_only=True)
 class StorePointRecord(Rw5Record):
     """Ex: SP,PN100,N 5002.0000,E 5000.0000,EL100.0000,--PP"""
@@ -530,11 +560,32 @@ class StorePointRecord(Rw5Record):
             return True
         return False
 
+    @property
+    def resection_readings(self):
+        _resections: list[StorePointResectionReadingCommentRecord] = []
+        for line in self.notes:
+            if "Reading" in line.content:
+                _l = line.content.removeprefix("--")
+                FP = Rw5Record.get_param(_l, "FP")
+                _AR = Rw5Record.get_param(_l, "AR")
+                AR = DMS.from_str(_AR)
+                _ZE = Rw5Record.get_param(_l, "ZE")
+                ZE = DMS.from_str(_ZE)
+                _SD = Rw5Record.get_param(_l, "SD")
+                SD = Decimal(_SD)
+                comment = Rw5Record.get_comment(_l)
+                _resections.append(
+                    StorePointResectionReadingCommentRecord(
+                        FP=FP, AR=AR, ZE=ZE, SD=SD, comment=comment
+                    )
+                )
+        return _resections
+
     @classmethod
     def from_string(
         cls, index: int, record_type: RecordType, line: str, machine_state: MachineState
     ) -> tuple[Self, MachineState]:
-        comment = Rw5Record.get_param_optional(line, "--")
+        comment = Rw5Record.get_comment(line)
         PN = Rw5Record.get_param(line, "PN")
         N = Rw5Record.get_param(line, "N ")
         E = Rw5Record.get_param(line, "E ")
@@ -579,7 +630,7 @@ class SideshotRecord(Rw5Record):
     def from_string(
         cls, index: int, record_type: RecordType, line: str, machine_state: MachineState
     ) -> tuple[Self, MachineState]:
-        comment = Rw5Record.get_param_optional(line, "--")
+        comment = Rw5Record.get_comment(line)
         OP = Rw5Record.get_param(line, "OP")
         FP = Rw5Record.get_param(line, "FP")
         AR = Rw5Record.get_param(line, "AR")
@@ -633,7 +684,7 @@ class GPSRecord(Rw5Record):
     def from_string(
         cls, index: int, record_type: RecordType, line: str, machine_state: MachineState
     ) -> tuple[Self, MachineState]:
-        comment = Rw5Record.get_param_optional(line, "--")
+        comment = Rw5Record.get_comment(line)
         PN = Rw5Record.get_param(line, "PN")
         LA = Rw5Record.get_param(line, "LA")
         LN = Rw5Record.get_param(line, "LN")
