@@ -1,4 +1,5 @@
 from decimal import Decimal
+from os import PathLike
 from pathlib import Path
 
 from py_rw5.parse.coordinate import AvgCoordinate, Coordinate
@@ -12,8 +13,12 @@ from py_rw5.parse.record import (
 
 
 class Rw5Data:
+    """
+    Represents the data of an rw5 file
+    """
+
     records: list[Rw5Record]
-    rw5_path: Path
+    rw5_path: PathLike
     rw5_encoding: str
     coordinates: dict[str, AvgCoordinate]
     """Dictionary of point names to avg coordinate classes"""
@@ -21,7 +26,7 @@ class Rw5Data:
     """Dictionary of point names to # of occurrences"""
 
     def __init__(
-        self, rw5_path: Path, rw5_encoding: str, records: list[Rw5Record]
+        self, rw5_path: PathLike, rw5_encoding: str, records: list[Rw5Record]
     ) -> None:
         self.records = records
         self.rw5_path = rw5_path

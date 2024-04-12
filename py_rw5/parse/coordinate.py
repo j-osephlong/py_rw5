@@ -1,4 +1,7 @@
-from dataclasses import dataclass
+"""
+Dataclasses to represent coordinates
+"""
+
 import dataclasses
 from decimal import Decimal
 from functools import reduce

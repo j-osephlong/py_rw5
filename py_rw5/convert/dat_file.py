@@ -5,6 +5,7 @@ Converts rw5 data to a dat file
 import datetime
 from decimal import Decimal
 import logging
+from os import PathLike
 from pathlib import Path
 from typing import Optional
 from py_rw5.parse.dms import DMS
@@ -315,6 +316,6 @@ class Rw5ToDatConverter:
             elif isinstance(record, StorePointRecord) and record.resection:
                 self.write_resection(record)
 
-    def write(self, output_file_path: Path):
+    def write(self, output_file_path: PathLike):
         with open(output_file_path, "w") as file:
             file.write("\n".join(self.dat_file_lines))

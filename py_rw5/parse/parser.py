@@ -1,10 +1,13 @@
 """
 Parser.py
 Author: Joseph Long
+
+Reads rw5 file into python dataclasses
 """
 
 import copy
 import logging
+from os import PathLike
 from pathlib import Path
 from typing import Literal, Optional, cast
 
@@ -39,7 +42,7 @@ class Rw5Parser:
     """Parses Carlson Rw5 file into instructions"""
 
     records: list[Rw5Record]
-    rw5_path: Path
+    rw5_path: PathLike
     rw5_encoding: str
     current_machine_state: MachineState
     last_non_comment_record: Optional[Rw5Record]
@@ -48,7 +51,7 @@ class Rw5Parser:
 
     def __init__(
         self,
-        path: Path,
+        path: PathLike,
         encoding: str = "utf-8",
         substitute_point_names=True,
         substitute_point_comment_prefix="CP/",
