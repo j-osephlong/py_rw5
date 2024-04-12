@@ -312,7 +312,7 @@ class Rw5ToDatConverter:
         for record in self.rw5_data.records:
             if isinstance(record, SideshotRecord):
                 self.write_side_shot(record)
-            elif isinstance(record, StorePointRecord) and record.is_resection:
+            elif isinstance(record, StorePointRecord) and record.resection:
                 self.write_resection(record)
 
     def write(self, output_file_path: Path):

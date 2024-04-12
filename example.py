@@ -14,3 +14,7 @@ if __name__ == "__main__":
     converter.convert()
 
     converter.write(Path(r"C:\Users\jlong\Documents\dmsemapping\py_rw5\out.dat"))
+
+    for record in data.records:
+        if isinstance(record, StorePointRecord):
+            pprint.pprint(record.__dict__)

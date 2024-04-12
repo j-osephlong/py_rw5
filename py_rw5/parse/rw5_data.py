@@ -51,7 +51,7 @@ class Rw5Data:
         for record in self.records:
             point_name = None
             if isinstance(record, GPSRecord) or (
-                isinstance(record, StorePointRecord) and not record.is_resection
+                isinstance(record, StorePointRecord) and not record.resection
             ):
                 if record.PN not in self.coordinates:
                     self.coordinates[record.PN] = AvgCoordinate()

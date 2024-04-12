@@ -99,7 +99,7 @@ class Rw5Record:
     """
     Comment at the end of the record, omitting the prefix '--' 
     """
-    notes: list["NoteRecord"] = dataclasses.field(default_factory=list)
+    notes: list[str] = dataclasses.field(default_factory=list)
     """
     List of note records after this record.
     """
@@ -155,14 +155,6 @@ class Rw5Record:
         """Description of record type"""
         return record_descriptions[self.record_type]
 
-    @cached_property
-    def note_params(self):
-        """All readable parameters from note attached records"""
-        _params = {}
-        for note in self.notes:
-            _params.update(note.params)
-        return _params
-
     def __str__(self) -> str:
         return (
             f'[{str(self.index).rjust(4)}] {self.record_type.rjust(3)} "{self.content}"'
@@ -173,7 +165,12 @@ class Rw5Record:
 
     @classmethod
     def from_string(
-        cls, index: int, record_type: RecordType, line: str, machine_state: MachineState
+        cls,
+        index: int,
+        record_type: RecordType,
+        line: str,
+        machine_state: MachineState,
+        comment_lines: list[str],
     ) -> tuple[Self, MachineState]:
         """Creates record from line of Rw5 file"""
         comment = Rw5Record.get_comment(line)
@@ -183,6 +180,7 @@ class Rw5Record:
                 record_type=record_type,
                 machine_state=machine_state,
                 comment=comment,
+                notes=comment_lines,
                 content=line,
             ),
             machine_state,
@@ -274,7 +272,12 @@ class BacksightRecord(Rw5Record):
 
     @classmethod
     def from_string(
-        cls, index: int, record_type: RecordType, line: str, machine_state: MachineState
+        cls,
+        index: int,
+        record_type: RecordType,
+        line: str,
+        machine_state: MachineState,
+        comment_lines: list[str],
     ) -> tuple[Self, MachineState]:
         comment = Rw5Record.get_comment(line)
         OP = Rw5Record.get_param(line, "OP")
@@ -297,6 +300,7 @@ class BacksightRecord(Rw5Record):
                 content=line,
                 machine_state=machine_state,
                 comment=comment,
+                notes=comment_lines,
                 OP=OP,
                 BP=BP,
                 BS=BS,
@@ -323,7 +327,12 @@ class JobRecord(Rw5Record):
 
     @classmethod
     def from_string(
-        cls, index: int, record_type: RecordType, line: str, machine_state: MachineState
+        cls,
+        index: int,
+        record_type: RecordType,
+        line: str,
+        machine_state: MachineState,
+        comment_lines: list[str],
     ) -> tuple[Self, MachineState]:
         comment = Rw5Record.get_comment(line)
         NM = Rw5Record.get_param(line, "NM")
@@ -337,6 +346,7 @@ class JobRecord(Rw5Record):
                 content=line,
                 machine_state=machine_state,
                 comment=comment,
+                notes=comment_lines,
                 NM=NM,
                 DT=DT,
                 TM=TM,
@@ -360,7 +370,12 @@ class LineOfSightRecord(Rw5Record):
 
     @classmethod
     def from_string(
-        cls, index: int, record_type: RecordType, line: str, machine_state: MachineState
+        cls,
+        index: int,
+        record_type: RecordType,
+        line: str,
+        machine_state: MachineState,
+        comment_lines: list[str],
     ) -> tuple[Self, MachineState]:
         comment = Rw5Record.get_comment(line)
         _HI = Rw5Record.get_param_optional(line, "HI")
@@ -382,6 +397,7 @@ class LineOfSightRecord(Rw5Record):
                 content=line,
                 machine_state=machine_state,
                 comment=comment,
+                notes=comment_lines,
                 HI=HI,
                 HR=HR,
             ),
@@ -412,7 +428,12 @@ class ModeSetupRecord(Rw5Record):
 
     @classmethod
     def from_string(
-        cls, index: int, record_type: RecordType, line: str, machine_state: MachineState
+        cls,
+        index: int,
+        record_type: RecordType,
+        line: str,
+        machine_state: MachineState,
+        comment_lines: list[str],
     ) -> tuple[Self, MachineState]:
         comment = Rw5Record.get_comment(line)
         AD = Rw5Record.get_param(line, "AD")
@@ -429,6 +450,7 @@ class ModeSetupRecord(Rw5Record):
                 content=line,
                 machine_state=machine_state,
                 comment=comment,
+                notes=comment_lines,
                 AD=int(AD),  # type: ignore
                 UN=int(UN),  # type: ignore
                 SF=Decimal(SF),
@@ -459,7 +481,12 @@ class OccupyRecord(Rw5Record):
 
     @classmethod
     def from_string(
-        cls, index: int, record_type: RecordType, line: str, machine_state: MachineState
+        cls,
+        index: int,
+        record_type: RecordType,
+        line: str,
+        machine_state: MachineState,
+        comment_lines: list[str],
     ) -> tuple[Self, MachineState]:
         comment = Rw5Record.get_comment(line)
         OP = Rw5Record.get_param(line, "OP")
@@ -474,6 +501,7 @@ class OccupyRecord(Rw5Record):
                 content=line,
                 machine_state=machine_state,
                 comment=comment,
+                notes=comment_lines,
                 OP=OP,
                 N=Decimal(N),
                 E=Decimal(E),
@@ -500,7 +528,12 @@ class OffCenterShotRecord(Rw5Record):
 
     @classmethod
     def from_string(
-        cls, index: int, record_type: RecordType, line: str, machine_state: MachineState
+        cls,
+        index: int,
+        record_type: RecordType,
+        line: str,
+        machine_state: MachineState,
+        comment_lines: list[str],
     ) -> tuple[Self, MachineState]:
         comment = Rw5Record.get_comment(line)
         _AR = Rw5Record.get_param(line, "AR")
@@ -516,6 +549,7 @@ class OffCenterShotRecord(Rw5Record):
                 content=line,
                 machine_state=machine_state,
                 comment=comment,
+                notes=comment_lines,
                 AR=AR,
                 ZE=ZE,
                 SD=Decimal(SD),
@@ -532,6 +566,7 @@ class OffCenterShotRecord(Rw5Record):
 
 @dataclasses.dataclass(kw_only=True)
 class StorePointResectionReadingCommentRecord:
+    name: str
     FP: str
     AR: DMS
     ZE: DMS
@@ -552,38 +587,17 @@ class StorePointRecord(Rw5Record):
     EL: Decimal
     """Elevation """
 
-    @property
-    def is_resection(self):
-        if len(self.notes) < 3:
-            return False
-        if "Resection" in self.notes[2].content:
-            return True
-        return False
-
-    @property
-    def resection_readings(self):
-        _resections: list[StorePointResectionReadingCommentRecord] = []
-        for line in self.notes:
-            if "Reading" in line.content:
-                _l = line.content.removeprefix("--")
-                FP = Rw5Record.get_param(_l, "FP")
-                _AR = Rw5Record.get_param(_l, "AR")
-                AR = DMS.from_str(_AR)
-                _ZE = Rw5Record.get_param(_l, "ZE")
-                ZE = DMS.from_str(_ZE)
-                _SD = Rw5Record.get_param(_l, "SD")
-                SD = Decimal(_SD)
-                comment = Rw5Record.get_comment(_l)
-                _resections.append(
-                    StorePointResectionReadingCommentRecord(
-                        FP=FP, AR=AR, ZE=ZE, SD=SD, comment=comment
-                    )
-                )
-        return _resections
+    resection: bool
+    resection_readings: list[StorePointResectionReadingCommentRecord]
 
     @classmethod
     def from_string(
-        cls, index: int, record_type: RecordType, line: str, machine_state: MachineState
+        cls,
+        index: int,
+        record_type: RecordType,
+        line: str,
+        machine_state: MachineState,
+        comment_lines: list[str],
     ) -> tuple[Self, MachineState]:
         comment = Rw5Record.get_comment(line)
         PN = Rw5Record.get_param(line, "PN")
@@ -591,6 +605,30 @@ class StorePointRecord(Rw5Record):
         E = Rw5Record.get_param(line, "E ")
         EL = Rw5Record.get_param(line, "EL")
 
+        resection = False
+        resection_readings: list[StorePointResectionReadingCommentRecord] = list()
+
+        if len(comment_lines) >= 3 and comment_lines[2].startswith("--Resection:"):
+            resection = True
+            for line in comment_lines[3:]:
+                if line.startswith("--Reading"):
+                    name_start = line.find("--Reading ") + len("--Reading ")
+                    name_end = line.find(":")
+                    name = line[name_start:name_end]
+                    _l = line[name_end + 1 :]
+                    FP = Rw5Record.get_param(_l, "FP")
+                    _AR = Rw5Record.get_param(_l, "AR")
+                    AR = DMS.from_str(_AR)
+                    _ZE = Rw5Record.get_param(_l, "ZE")
+                    ZE = DMS.from_str(_ZE)
+                    _SD = Rw5Record.get_param(_l, "SD")
+                    SD = Decimal(_SD)
+                    comment = Rw5Record.get_comment(_l)
+                    resection_readings.append(
+                        StorePointResectionReadingCommentRecord(
+                            FP=FP, AR=AR, ZE=ZE, SD=SD, comment=comment, name=name
+                        )
+                    )
         return (
             cls(
                 index=index,
@@ -598,10 +636,13 @@ class StorePointRecord(Rw5Record):
                 content=line,
                 machine_state=machine_state,
                 comment=comment,
+                notes=comment_lines,
                 PN=PN,
                 N=Decimal(N),
                 E=Decimal(E),
                 EL=Decimal(EL),
+                resection=resection,
+                resection_readings=resection_readings,
             ),
             machine_state,
         )
@@ -628,7 +669,12 @@ class SideshotRecord(Rw5Record):
 
     @classmethod
     def from_string(
-        cls, index: int, record_type: RecordType, line: str, machine_state: MachineState
+        cls,
+        index: int,
+        record_type: RecordType,
+        line: str,
+        machine_state: MachineState,
+        comment_lines: list[str],
     ) -> tuple[Self, MachineState]:
         comment = Rw5Record.get_comment(line)
         OP = Rw5Record.get_param(line, "OP")
@@ -644,6 +690,7 @@ class SideshotRecord(Rw5Record):
                 content=line,
                 machine_state=machine_state,
                 comment=comment,
+                notes=comment_lines,
                 OP=OP,
                 FP=FP,
                 AR=DMS.from_str(AR),
@@ -668,27 +715,74 @@ class GPSRecord(Rw5Record):
     _EL: Decimal
     """Raw Elevation. The property EL should be used instead as it has been post processed."""
 
-    @property
-    def N(self):
-        return Decimal(self.note_params["N "])
+    N: Decimal
+    """Northing (Processed)"""
+    E: Decimal
+    """Easting (Processed)"""
+    EL: Decimal
+    """Elevation (Processed)"""
 
-    @property
-    def E(self):
-        return Decimal(self.note_params["E "])
-
-    @property
-    def EL(self):
-        return Decimal(self.note_params["EL"])
+    FIXED: bool
+    """Was GPS shot fixed?
+    
+    'Fixed means you have a full phase solution with the satellites on both base 
+        and rover antennas and radio connection with the receiver.'
+    """
+    HRMS: Decimal
+    """Horizontal RMS"""
+    VRMS: Decimal
+    """Vertical RMS"""
+    AGE: Decimal
+    """Age of reading"""
+    num_epochs: int
+    """Number of epochs (readings) for this measurement."""
 
     @classmethod
     def from_string(
-        cls, index: int, record_type: RecordType, line: str, machine_state: MachineState
+        cls,
+        index: int,
+        record_type: RecordType,
+        line: str,
+        machine_state: MachineState,
+        comment_lines: list[str],
     ) -> tuple[Self, MachineState]:
         comment = Rw5Record.get_comment(line)
         PN = Rw5Record.get_param(line, "PN")
         LA = Rw5Record.get_param(line, "LA")
         LN = Rw5Record.get_param(line, "LN")
         EL = Rw5Record.get_param(line, "EL")
+
+        # --GS,PN6016,N 7366799.2873,E 2532888.7519,EL46.5363,--CP/CP8
+        GS_line = comment_lines[0]
+        N = Decimal(Rw5Record.get_param(GS_line, "N "))
+        E = Decimal(Rw5Record.get_param(GS_line, "E "))
+        EL = Decimal(Rw5Record.get_param(GS_line, "EL"))
+
+        FIXED: bool
+        num_readings: int
+        HRMS: Decimal
+        VRMS: Decimal
+        if comment_lines[2].startswith("--Valid Readings:"):
+            # This is an average line (assumed FIXED)
+            FIXED = True
+            print(comment_lines[2].removeprefix("--Valid Readings:").strip().split(" "))
+            num_readings = int(
+                comment_lines[2].removeprefix("--Valid Readings:").strip().split(" ")[0]
+            )
+            HRMS_line = comment_lines[10]
+            HRMS = Decimal(HRMS_line.removeprefix("--HRMS Avg:").strip().split(" ")[0])
+            VRMS_line = comment_lines[11]
+            VRMS = Decimal(VRMS_line.removeprefix("--VRMS Avg:").strip().split(" ")[0])
+            AGE_line = comment_lines[15]
+            AGE = Decimal(AGE_line.removeprefix("--AGE Avg:").strip().split(" ")[0])
+        elif comment_lines[2].startswith("--HRMS"):
+            # This is a single epoch line
+            HRMS_line = comment_lines[2]
+            num_readings = 1
+            HRMS = Decimal(Rw5Record.get_param(HRMS_line, "HRMS:"))
+            VRMS = Decimal(Rw5Record.get_param(HRMS_line, "VRMS:"))
+            AGE = Decimal(Rw5Record.get_param(HRMS_line, "AGE:"))
+            FIXED = Rw5Record.get_param(HRMS_line, "STATUS:") == "FIXED"
 
         return (
             cls(
@@ -697,10 +791,19 @@ class GPSRecord(Rw5Record):
                 content=line,
                 machine_state=machine_state,
                 comment=comment,
+                notes=comment_lines,
                 PN=PN,
                 _LA=Decimal(LA),
                 _LN=Decimal(LN),
                 _EL=Decimal(EL),
+                N=N,
+                E=E,
+                EL=EL,
+                FIXED=FIXED,
+                num_epochs=num_readings,
+                HRMS=HRMS,
+                VRMS=VRMS,
+                AGE=AGE,
             ),
             machine_state,
         )

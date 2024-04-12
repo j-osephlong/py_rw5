@@ -76,9 +76,24 @@ class Rw5Parser:
 
         logger.info("Beginning parse.")
 
+        record_line_index: Optional[int] = None
+        record_line: Optional[str] = None
+        comment_lines = []
+
         with open(self.rw5_path, "r", encoding=self.rw5_encoding) as file:
             for index, line in enumerate(file):
-                self.records.append(self.parse_instruction(index, line))
+                if line.startswith("--") and record_line is not None:
+                    comment_lines.append(line)
+                else:
+                    if record_line is not None and record_line_index is not None:
+                        self.records.append(
+                            self.parse_instruction(
+                                record_line_index, record_line, comment_lines
+                            )
+                        )
+                    record_line = line
+                    record_line_index = index
+                    comment_lines = []
 
         return Rw5Data(self.rw5_path, self.rw5_encoding, self.records)
 
@@ -109,7 +124,9 @@ class Rw5Parser:
 
         return line.replace(point_name, new_point_name)
 
-    def parse_instruction(self, index: int, line: str) -> Rw5Record:
+    def parse_instruction(
+        self, index: int, line: str, comment_lines: list[str]
+    ) -> Rw5Record:
         """Parses single line of file"""
 
         logger.info(f"Parsing line {index} {line=}")
@@ -151,16 +168,11 @@ class Rw5Parser:
             record_type=code,
             line=line.strip(),
             machine_state=copy.deepcopy(self.current_machine_state),
+            comment_lines=comment_lines,
         )
 
         self.current_machine_state = machine_state
 
         logger.info(f"{record.__dict__}")
-
-        # If the record is a note, append it to the last non-note record
-        if not isinstance(record, NoteRecord):
-            self.last_non_comment_record = record
-        elif self.last_non_comment_record is not None:
-            self.last_non_comment_record.notes.append(record)
 
         return record
